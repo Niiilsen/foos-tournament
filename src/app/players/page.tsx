@@ -2,7 +2,7 @@
 import {PlayerTableSkeleton} from '@/app/ui/skeletons';
 import {Suspense} from 'react';
 import { Metadata } from 'next';
-import PlayerTable from "@/app/ui/players/playertable";
+import PlayerTable from "@/app/ui/players/player-table";
 
 export const metadata: Metadata = {
     title: 'Players',
