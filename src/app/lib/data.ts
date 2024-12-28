@@ -1,19 +1,12 @@
 ﻿import {sql} from "@vercel/postgres";
-import {Player, PlayerWithMatches, Tournament} from "@/app/lib/definitions";
+import { prisma } from '@/lib/prisma';
 
 export async function fetchPlayers() {
     try {
-        const data = await sql<Player>`
-      SELECT
-        id,
-        name,
-        email
-      FROM players
-      ORDER BY name ASC
-    `;
+        const data = await prisma.player.findMany()
 
-        const players = data.rows;
-        return players;
+        console.log(data);
+        return data;
     } catch (err) {
         console.error('Database Error:', err);
         throw new Error('Failed to fetch all players.');
@@ -24,20 +17,17 @@ export async function fetchPlayers() {
 
 export async function fetchPlayerById(id: string) {
     try {
-        const data = await sql<Player>`
-            SELECT
-                id,
-                name,
-                email
-            FROM players
-            WHERE id = ${id};
-        `;
+        const data = prisma.player.findFirst({
+            where: {
+                id: id
+            }
+        })
 
-        if (data.rows.length === 0) {
+        if (!data) {
             throw new Error('Player not found or has no matches.');
         }
         
-        return data.rows[0];
+        return data;
 
     } catch (err) {
         console.error('Database Error:', err);
@@ -45,26 +35,24 @@ export async function fetchPlayerById(id: string) {
     }
 }
 
+export async function fetchLatestMatches(id: string) {
+    try {
+       return null;
+
+    } catch (err) {
+        console.error('Database Error:', err);
+        throw new Error('Failed to fetch latest matches for player.');
+    }
+}
+
+
+
 export async function fetchAllTournaments() {
     try {
-        const data = await sql<Tournament>`
-            SELECT
-                id,
-                name,
-                start_date,
-                end_date,
-                max_players,
-                game_type
-            FROM tournaments
-        `;
+        const data = await prisma.tournament.findMany();
 
-        console.log("Fetched data", data);
-        if (data.rows.length === 0) {
-            throw new Error('No tournaments was found.');
-        }
-
-        return data.rows;
-
+        return data;
+        
     } catch (err) {
         console.error('Database Error:', err);
         throw new Error('Failed to fetch tournaments.');

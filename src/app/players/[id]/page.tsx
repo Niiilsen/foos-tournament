@@ -1,4 +1,4 @@
-﻿import {fetchPlayerById} from "@/app/lib/data";
+﻿import {fetchPlayerById, fetchLatestMatches} from "@/app/lib/data";
 import {notFound} from 'next/navigation';
 import {Metadata} from "next";
 
@@ -9,7 +9,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
     const params = await props.params;
     const id = params.id;
     const [player] = await Promise.all([
-        fetchPlayerById(id),
+        fetchPlayerById(id)
     ]);
 
     if (!player) {

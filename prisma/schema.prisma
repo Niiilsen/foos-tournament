@@ -1,0 +1,141 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Player {
+  id    String @id @default(uuid())
+  name  String
+  email String @unique
+
+  teams         TeamPlayer[] // Relation to the join table
+  groupRankings GroupRanking[]
+  groupMembers  GroupMember[]
+}
+
+model Team {
+  id     String @id @default(uuid())
+  name   String
+  players TeamPlayer[] // Relation to the join table
+  homeMatches Match[]  @relation("HomeTeam")
+  awayMatches Match[]  @relation("AwayTeam")
+  wonMatches  Match[]  @relation("WinnerTeam")
+}
+
+model TeamPlayer {
+  id        String @id @default(uuid()) // Primary key for the join table
+  player_id String
+  team_id   String
+
+  player Player @relation(fields: [player_id], references: [id])
+  team   Team   @relation(fields: [team_id], references: [id])
+
+  @@unique([player_id, team_id]) // Ensures no duplicate Player-Team relationships
+}
+
+model Tournament {
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar(255)
+  startDate   DateTime @db.Date
+  endDate     DateTime @db.Date
+  maxPlayers  Int
+  gameType    String   @db.VarChar(255)
+
+  matches   Match[]
+  groups    Group[]
+  playoffs  Playoff[]
+
+  @@map("tournaments") // Maps the Prisma model to the database table "tournaments"
+}
+
+model Match {
+  id             String   @id @default(uuid())
+  tournamentId   String
+  groupId        String?
+  stage          String   @db.VarChar(255)
+  matchDatetime  DateTime
+  homeTeamId     String
+  awayTeamId     String
+  homeScore      Int
+  awayScore      Int
+  isPlayed       Boolean
+  winnerTeamId   String?
+
+  // Relations
+  tournament Tournament @relation(fields: [tournamentId], references: [id])
+  group      Group?     @relation(fields: [groupId], references: [id])
+  homeTeam   Team       @relation(fields: [homeTeamId], references: [id], name: "HomeTeam")
+  awayTeam   Team       @relation(fields: [awayTeamId], references: [id], name: "AwayTeam")
+  winnerTeam Team?      @relation(fields: [winnerTeamId], references: [id], name: "WinnerTeam")
+  playoff    Playoff?   @relation("MatchToPlayoff")
+
+  @@map("match") // Maps Prisma model to the "match" table in the database
+}
+
+model Group {
+  id           String   @id @default(uuid())
+  tournamentId String
+  groupName    String   @db.VarChar(255)
+  round        Int
+
+  tournament   Tournament @relation(fields: [tournamentId], references: [id])
+  matches      Match[]
+  rankings     GroupRanking[]
+  members      GroupMember[]
+
+  @@map("tournament_group") // Maps the Prisma model to the "tournament_group" table
+}
+
+model GroupRanking {
+  id              String @id @default(uuid())
+  groupId         String
+  playerId        String
+  points          Int
+  matchesPlayed   Int
+  matchesWon      Int
+  matchesLost     Int
+  goalsFor        Int
+  goalsAgainst    Int
+  goalDifference  Int
+
+  // Relations
+  group  Group  @relation(fields: [groupId], references: [id])
+  player Player @relation(fields: [playerId], references: [id])
+
+  @@map("group_ranking") // Maps Prisma model to the "group_ranking" table
+}
+
+model GroupMember {
+  id       String @id @default(uuid())
+  groupId  String
+  playerId String
+
+  // Relations
+  group  Group  @relation(fields: [groupId], references: [id])
+  player Player @relation(fields: [playerId], references: [id])
+
+  @@map("group_member") // Maps Prisma model to the "group_member" table
+}
+
+model Playoff {
+  id           String   @id @default(uuid())
+  tournamentId String
+  stage        String   @db.VarChar(255)
+  matchId      String   @unique // Ensures `matchId` is unique to satisfy the `@relation` constraint
+
+  // Relations
+  tournament Tournament @relation(fields: [tournamentId], references: [id])
+  match      Match      @relation("MatchToPlayoff", fields: [matchId], references: [id])
+
+  @@map("playoff") // Maps Prisma model to the "playoff" table
+}

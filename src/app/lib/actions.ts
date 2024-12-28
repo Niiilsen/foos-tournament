@@ -4,6 +4,7 @@ import { sql } from '@vercel/postgres';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import {CreateTournamentSchema} from "@/app/lib/schema";
+import {prisma} from "@/lib/prisma";
 
 export type State = {
     errors?: {
@@ -38,11 +39,18 @@ export async function createTournament(prevState: State, formData: FormData) {
     const { name, startDate, endDate, gameType } = validatedFields.data;
     console.log("Create tournament data", validatedFields.data);
     try {
-        await sql`
-            INSERT INTO tournaments (id, name, start_date, end_date, max_players, game_type)
-            VALUES (${crypto.randomUUID()}, ${name}, ${startDate.toDateString()}, ${endDate.toDateString()}, ${16}, ${gameType})
-        `;
+        await prisma.tournament.create({
+            data: {
+                id: crypto.randomUUID(),
+                name: name,
+                startDate: startDate,
+                endDate: endDate,
+                maxPlayers: 16, 
+                gameType: gameType
+            }
+        })
     } catch (error) {
+        console.log(error);
         return { message: 'Database Error: Failed to Create Tournament.' };
     }
 
