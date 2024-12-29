@@ -1,7 +1,7 @@
 ﻿import {Button} from "@/components/ui/button";
 import Link from "next/link";
 import {PlusIcon} from "@heroicons/react/24/solid";
-import {fetchAllTournaments} from "@/app/lib/data";
+import {fetchAllTournaments} from "@/app/lib/tournaments/data";
 
 
 export default async function Page(){
@@ -11,14 +11,17 @@ export default async function Page(){
         <h1>Tournaments</h1>
         <ul className="flex flex-col gap-4">
             {tournaments.map((tournament) => (
-                <li key={tournament.id} className="flex justify-between border border-gray-400 rounded-md p-4">
+                <li key={tournament.id}>
+                    <Link href={`/tournaments/${tournament.id}`}
+                        className="flex gap-4 items-center p-4 border border-gray-200 rounded-md hover:border-blue-600">
                     <div>
                         <h2 className="text-2xl font-bold">{tournament.name}</h2>
-                        <p className="text-sm text-gray-600">{tournament.game_type}</p>
+                        <p className="text-sm text-gray-600">{tournament.gameType}</p>
                     </div>
-                    <div>{tournament.max_players}</div>
+                    <div>{tournament.maxPlayers}</div>
                     <div>{tournament.startDate.toDateString()}</div>
                     <div>{tournament.endDate.toDateString()}</div>
+                    </Link>
                 </li>
             ))}
         </ul>

@@ -17,10 +17,13 @@ model Player {
   id    String @id @default(uuid())
   name  String
   email String @unique
+  birthDate DateTime? @db.Date
+  password String
 
   teams         TeamPlayer[] // Relation to the join table
   groupRankings GroupRanking[]
   groupMembers  GroupMember[]
+  tournaments   TournamentPlayer[] // Relation to the join table
 }
 
 model Team {
@@ -51,11 +54,26 @@ model Tournament {
   maxPlayers  Int
   gameType    String   @db.VarChar(255)
 
-  matches   Match[]
-  groups    Group[]
-  playoffs  Playoff[]
+  matches     Match[]
+  groups      Group[]
+  playoffs    Playoff[]
+  players     TournamentPlayer[] // Relation to the join table
 
   @@map("tournaments") // Maps the Prisma model to the database table "tournaments"
+}
+
+
+model TournamentPlayer {
+  id           String @id @default(uuid()) // Primary key for the join table
+  tournamentId String
+  playerId     String
+
+  // Relations
+  tournament Tournament @relation(fields: [tournamentId], references: [id])
+  player     Player     @relation(fields: [playerId], references: [id])
+
+  @@unique([tournamentId, playerId]) // Ensures no duplicate Tournament-Player relationships
+  @@map("tournament_player") // Maps the Prisma model to the "tournament_player" table
 }
 
 model Match {

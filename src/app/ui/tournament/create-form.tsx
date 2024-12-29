@@ -2,7 +2,6 @@
 
 import {createTournament, State} from "@/app/lib/actions";
 import {useActionState, useEffect} from 'react';
-import { Player } from '@/app/lib/definitions';
 import {Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage} from "@/components/ui/form";
 import {useForm} from "react-hook-form";
 import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
@@ -23,7 +22,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 
-export default function CreateTournamentForm({ players }: { players: Player[] }) {
+export default function CreateTournamentForm() {
     const initialState: State = { message: null, errors: {} };
     const [state, formAction] = useActionState(createTournament, initialState);
 
