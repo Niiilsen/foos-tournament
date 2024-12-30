@@ -5,7 +5,6 @@ export async function fetchPlayers() {
     try {
         const data = await prisma.player.findMany()
 
-        console.log(data);
         return data;
     } catch (err) {
         console.error('Database Error:', err);

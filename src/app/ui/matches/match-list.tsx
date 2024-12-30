@@ -1,21 +1,22 @@
-﻿import {Match} from "@/app/lib/definitions";
+﻿import {FormattedMatch} from "@/app/lib/tournaments/data";
+import {clsx} from "clsx";
+import Match from "@/app/ui/matches/match";
 
-export default async function MatchList({
-                                            matches
-                                        }: {
-    matches: Match[]
-}) {
-
-    if (matches && matches.length === 0) {
-        return <p>No matches played</p>
-    }
-
+export default async function MathList({matchList, className = ""}: {matchList: FormattedMatch[]; className?: string;}) {
     return (
-        <>
-            {matches.map((match) => (
-                <div className="p-6 rounded-sm border border-gray-300">{match.team}</div>
-
-            ))}
-        </>
+        <div className={clsx(className)}>
+            {matchList.length === 0 && <p>There are no matches to show</p>}
+            {matchList.length > 0 &&
+                <div className="flex flex-col gap-4">
+                    {
+                        matchList.map((match) => {
+                            return (
+                                <Match match={match} />
+                            )
+                        })
+                    }
+                </div>
+            }
+        </div>
     )
 }

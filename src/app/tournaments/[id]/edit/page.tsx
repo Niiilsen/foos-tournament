@@ -1,8 +1,14 @@
 ﻿import {notFound} from "next/navigation";
 import {Metadata} from "next";
-import {fetchTournamentById} from "@/app/lib/tournaments/data";
+import {fetchGroupsWithPlayers, fetchTournamentById} from "@/app/lib/tournaments/data";
 import PlayersSection from '@/app/ui/tournament/players-section';
 import {Badge} from "@/components/ui/badge";
+import {Button} from "@/components/ui/button";
+import {generateMatches, generateTournamentGroups} from "@/app/lib/actions";
+import GroupSection from "@/app/ui/tournament/groups-section";
+import {Suspense} from "react";
+import {ArrowPathIcon} from "@heroicons/react/24/solid";
+import MatchesSection from "@/app/ui/tournament/matches-section";
 
 export const metadata: Metadata = {
     title: "Edit Tournament",
@@ -32,7 +38,15 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
             </div>
 
             {/* Add Players Section */}
-            <PlayersSection tournamentId={id} tournamentPlayers={tournament.players} allowEdit={true}/>
+                <PlayersSection className="mt-12" tournamentId={id} allowEdit={true}/>
+
+            <Suspense key={`groups_${id}`} fallback={<div>Loading groups...</div>}>
+                <GroupSection className="mt-12" tournamentId={id} allowEdit={true}/>
+            </Suspense>
+            
+            <MatchesSection className="mt-12" tournamentId={id} allowEdit={true}/>
+
+
         </main>
     );
 }

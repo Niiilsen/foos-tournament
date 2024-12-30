@@ -6,6 +6,8 @@ import Link from "next/link";
 import {PencilIcon, PlusIcon} from "@heroicons/react/24/solid";
 import {Button} from "@/components/ui/button";
 import PlayersSection from "@/app/ui/tournament/players-section";
+import GroupSection from "@/app/ui/tournament/groups-section";
+import MatchesSection from "@/app/ui/tournament/matches-section";
 
 export const metadata: Metadata = {
     title: 'Tournament',
@@ -39,7 +41,10 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
                 </div>
             </div>
             {/* Add Players Section */}
-            <PlayersSection tournamentId={id} tournamentPlayers={tournament.players}/>
+            <PlayersSection className="mt-12" tournamentId={id} />
+            <GroupSection className="mt-12" tournamentId={id} />
+            <MatchesSection className="mt-12" tournamentId={id} />
+
         </main>
     )
 }
