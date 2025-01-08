@@ -49,7 +49,9 @@ export default function Breadcrumbs() {
                                     </>
                                 )}
                             </BreadcrumbItem>
-                            <BreadcrumbSeparator/>
+                            {index !== pathNames.length - 1 &&
+                                <BreadcrumbSeparator/>
+                            }
                         </>
                     );
                 })}

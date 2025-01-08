@@ -266,6 +266,90 @@ export async function getGamesForPlayer(playerId: string) {
     }
 }
 
+import { FormattedMatch } from "@/interfaces/FormattedMatch"; // Adjust the import path if needed
+
+export async function getMatchesForGroup(groupId: string): Promise<FormattedMatch[]> {
+    try {
+        const group = await prisma.group.findUnique({
+            where: { id: groupId },
+            include: {
+                matches: {
+                    include: {
+                        tournament: {
+                            select: {
+                                id: true,
+                                name: true, // Include tournament info
+                            },
+                        },
+                        homeTeam: {
+                            include: {
+                                players: {
+                                    include: {
+                                        player: {
+                                            select: {
+                                                id: true,
+                                                name: true, // Include player name
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                        awayTeam: {
+                            include: {
+                                players: {
+                                    include: {
+                                        player: {
+                                            select: {
+                                                id: true,
+                                                name: true, // Include player name
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        if (!group) {
+            throw new Error("Group not found");
+        }
+
+        // Format matches according to the FormattedMatch interface
+        const formattedMatches: FormattedMatch[] = group.matches.map((match) => ({
+            id: match.id,
+            tournament: match.tournament,
+            group: {
+                id: group.id,
+                groupName: group.groupName,
+            },
+            stage: match.stage,
+            matchDatetime: match.matchDatetime,
+            homeTeam: match.homeTeam.players.map((teamPlayer) => ({
+                id: teamPlayer.player.id,
+                name: teamPlayer.player.name,
+            })),
+            awayTeam: match.awayTeam.players.map((teamPlayer) => ({
+                id: teamPlayer.player.id,
+                name: teamPlayer.player.name,
+            })),
+            homeScore: match.homeScore,
+            awayScore: match.awayScore,
+            isPlayed: match.isPlayed,
+        }));
+
+        return formattedMatches;
+    } catch (error) {
+        console.error("Error fetching matches for group:", error);
+        throw new Error("Failed to fetch matches for the group.");
+    }
+}
+
+
+
 export interface FormattedMatch {
     id: string;
     tournament: {id: string, name: string};

@@ -4,6 +4,7 @@ import {generateTournamentGroups} from "@/app/lib/actions";
 import {Button} from "@/components/ui/button";
 import {ArrowPathIcon} from "@heroicons/react/24/solid";
 import {clsx} from "clsx";
+import GroupEditor from "./group-editor";
 
 export default async function GroupSection({tournamentId, allowEdit = false, className = ""}: {
     tournamentId: string,
@@ -41,6 +42,7 @@ export default async function GroupSection({tournamentId, allowEdit = false, cla
                     <ArrowPathIcon/>
                 </Button>
             }
+            <GroupEditor />
         </div>
     )
 }
