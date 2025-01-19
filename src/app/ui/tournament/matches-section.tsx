@@ -10,7 +10,9 @@ export default async function MatchesSection({tournamentId, allowEdit = false, c
     allowEdit?: boolean,
     className?: string
 }) {
-    const matches = await getMatchesForTournament(tournamentId);
+    const matches = await getMatchesForTournament(tournamentId).then((matches) => {
+        return matches;
+    });
 
     return (
         <div className={clsx(className)}>

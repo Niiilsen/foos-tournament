@@ -97,7 +97,7 @@ export async function fetchGroupsWithPlayers(tournamentId: string) {
         });
 
         // Format groups with their players
-        const formattedGroups = groups.map((group) => ({
+        const formattedGroups: IFormattedGroup[] = groups.map((group) => ({
             id: group.id,
             name: group.groupName,
             players: group.members.map((member) => member.player),
@@ -159,7 +159,7 @@ export async function getMatchesForTournament(tournamentId: string) {
         });
 
         // Format matches for easier consumption
-        const formattedMatches: FormattedMatch[] = matches.map((match) => ({
+        const formattedMatches: IFormattedMatch[] = matches.map((match) => ({
             id: match.id,
             tournament: match.tournament,
             stage: match.stage,
@@ -243,7 +243,7 @@ export async function getGamesForPlayer(playerId: string) {
         });
 
         // Format the games for easier consumption
-        const formattedGames: FormattedMatch[] = games.map((game) => ({
+        const formattedGames: IFormattedMatch[] = games.map((game) => ({
             id: game.id,
             tournament: game.tournament, // Include tournament info
             group: null,
@@ -266,9 +266,7 @@ export async function getGamesForPlayer(playerId: string) {
     }
 }
 
-import { FormattedMatch } from "@/interfaces/FormattedMatch"; // Adjust the import path if needed
-
-export async function getMatchesForGroup(groupId: string): Promise<FormattedMatch[]> {
+export async function getMatchesForGroup(groupId: string): Promise<IFormattedMatch[]> {
     try {
         const group = await prisma.group.findUnique({
             where: { id: groupId },
@@ -319,7 +317,7 @@ export async function getMatchesForGroup(groupId: string): Promise<FormattedMatc
         }
 
         // Format matches according to the FormattedMatch interface
-        const formattedMatches: FormattedMatch[] = group.matches.map((match) => ({
+        const formattedMatches: IFormattedMatch[] = group.matches.map((match) => ({
             id: match.id,
             tournament: match.tournament,
             group: {
@@ -348,9 +346,18 @@ export async function getMatchesForGroup(groupId: string): Promise<FormattedMatc
     }
 }
 
+export interface IFormattedGroup {
+    id: string;
+    name: string;
+    players: ISimplePlayer[];
+}
 
+export interface ISimplePlayer {
+    id: string;
+    name: string;
+}
 
-export interface FormattedMatch {
+export interface IFormattedMatch {
     id: string;
     tournament: {id: string, name: string};
     group: { id: string; groupName: string; } | null;

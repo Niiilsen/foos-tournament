@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import {CreateTournamentSchema} from "@/app/lib/schema";
 import {prisma} from "@/lib/prisma";
-import {fetchTournamentById} from "@/app/lib/tournaments/data";
+import {fetchTournamentById, IFormattedGroup} from "@/app/lib/tournaments/data";
 
 export type State = {
     errors?: {
@@ -408,6 +408,55 @@ async function deleteMatchesForGroup(tournamentId: string, groupId: string) {
     } catch (error) {
         console.error("Error deleting match-related data:", error);
         throw new Error("Failed to delete match-related data.");
+    }
+}
+
+export async function saveEditedGroups(tournamentId: string, updatedGroups: IFormattedGroup[]) {
+    try {
+        await prisma.$transaction(async (tx) => {
+            // Step 1: Delete existing groups and their members
+            await tx.groupMember.deleteMany({
+                where: {
+                    group: {
+                        tournamentId,
+                    },
+                },
+            });
+
+            await tx.group.deleteMany({
+                where: {
+                    tournamentId,
+                },
+            });
+
+            // Step 2: Insert updated groups and their members
+            for (const group of updatedGroups) {
+                // Create the group
+                const newGroup = await tx.group.create({
+                    data: {
+                        id: group.id, // Use the existing group ID if provided
+                        groupName: group.name,
+                        tournamentId,
+                        round: 1, // Set default round or adjust as needed
+                    },
+                });
+
+                // Add players to the group
+                const groupMembers = group.players.map((player) => ({
+                    groupId: newGroup.id,
+                    playerId: player.id,
+                }));
+
+                await tx.groupMember.createMany({
+                    data: groupMembers,
+                });
+            }
+        });
+
+        console.log("Groups successfully updated");
+    } catch (error) {
+        console.error("Error saving edited groups:", error);
+        throw new Error("Failed to save edited groups.");
     }
 }
 

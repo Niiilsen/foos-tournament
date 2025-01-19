@@ -3,19 +3,13 @@
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
+    DialogDescription, DialogFooter,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
 
-import {useState} from "react";
+import { useState } from "react";
 import {
     DndContext,
     closestCenter,
@@ -23,92 +17,27 @@ import {
     KeyboardSensor,
     useSensor,
     useSensors,
-    DragOverlay, DragEndEvent, DragOverEvent, DragStartEvent, useDndContext,
+    DragOverlay, DragEndEvent, DragOverEvent, DragStartEvent,
 } from "@dnd-kit/core";
 import {
     arrayMove,
-    SortableContext,
-    verticalListSortingStrategy,
-    useSortable, sortableKeyboardCoordinates,
+    sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
-import {CSS} from "@dnd-kit/utilities";
 import SortableItem from "@/app/ui/dnd/sortable-item";
 import Container from "@/app/ui/dnd/container";
-import {DialogBody} from "next/dist/client/components/react-dev-overlay/internal/components/Dialog";
-import {clsx} from "clsx";
+import { clsx } from "clsx";
+import { IFormattedGroup, ISimplePlayer } from "@/app/lib/tournaments/data";
+import {Button} from "@/components/ui/button";
+import {saveEditedGroups} from "@/app/lib/actions";
 
-interface SimplePlayer {
-    id: string;
-    name: string;
+interface IGroupEditorProps {
+    groups: IFormattedGroup[];
+    tournamentId: string;
 }
 
-interface Group {
-    id: string;
-    name: string;
-    players: SimplePlayer[];
-}
-
-const defaultAnnouncements = {
-    onDragStart(id: string) {
-        console.log(`Picked up draggable item ${id}.`);
-    },
-    onDragOver(id: string, overId: string) {
-        if (overId) {
-            console.log(
-                `Draggable item ${id} was moved over droppable area ${overId}.`
-            );
-            return;
-        }
-
-        console.log(`Draggable item ${id} is no longer over a droppable area.`);
-    },
-    onDragEnd(id: string, overId: string) {
-        if (overId) {
-            console.log(
-                `Draggable item ${id} was dropped over droppable area ${overId}`
-            );
-            return;
-        }
-
-        console.log(`Draggable item ${id} was dropped.`);
-    },
-    onDragCancel(id: string) {
-        console.log(`Dragging was cancelled. Draggable item ${id} was dropped.`);
-    }
-};
-
-type groupTest = {
-    [key: string]: Group;
-}
-
-export default function GroupEditor() {
-    const [activeId, setActiveId] = useState<string | number | null>();
-    const [groups, setGroups] = useState<groupTest>({
-        Group1: {
-            id: crypto.randomUUID(),
-            name: 'Group 1',
-            players: [
-                {name: "Thomas", id: crypto.randomUUID()},
-                {name: "Fredrik", id: crypto.randomUUID()},
-                {name: "Steffen", id: crypto.randomUUID()},
-                {name: "Kristoffer", id: crypto.randomUUID()},
-                {name: "Vetle", id: crypto.randomUUID()},
-            ],
-        },
-        Group2:
-            {
-                id: crypto.randomUUID(),
-                name: 'Group 2',
-                players: [
-                    {name: "Audun", id: crypto.randomUUID()},
-                    {name: "Ellinor", id: crypto.randomUUID()},
-                    {name: "Jon Anders", id: crypto.randomUUID()},
-                    {name: "Elena", id: crypto.randomUUID()},
-                ],
-            },
-    });
-
-    const [activePlayer, setActivePlayer] = useState<SimplePlayer | null>(null);
+export default function GroupEditor({ groups: initialGroups, tournamentId }: IGroupEditorProps) {
+    const [groups, setGroups] = useState<IFormattedGroup[]>(initialGroups);
+    const [activePlayer, setActivePlayer] = useState<ISimplePlayer | null>(null);
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -117,180 +46,175 @@ export default function GroupEditor() {
         })
     );
 
-
     function findContainer(id: string) {
-        // Check if `id` is directly a group key
-        if (id in groups) {
-            return id;
-        }
-
         // Search for the group that contains the player with the matching `id`
-        return Object.keys(groups).find((groupKey) =>
-            groups[groupKey].players.some((player) => player.id === id)
-        );
+        return groups.find((group) => group.players.some((player) => player.id === id))?.id ?? null;
     }
 
     function handleDragStart(event: DragStartEvent) {
-        const {active} = event;
-        const {id} = active;
+        const { active } = event;
+        const { id } = active;
 
-        const player = Object.values(groups)
+        const player = groups
             .flatMap((group) => group.players)
             .find((player) => player.id === id);
 
         if (player) {
             setActivePlayer(player);
         }
-        console.log('Starting drag', id);
     }
 
     function handleDragOver(event: DragOverEvent) {
-        const {active, over} = event;
-
+        const { active, over } = event;
         const id = active.id.toString();
-        const overId = over?.id.toString() ?? '';
+        const overId = over?.id.toString() ?? null;
 
-        // Find the containers
-        const activeContainer = findContainer(id);
-        const overContainer = findContainer(overId);
-
-        if (!activeContainer || !overContainer || activeContainer === overContainer) {
+        if (!overId) {
             return;
         }
 
-        setGroups((prev) => {
-            if (active.rect.current.translated === null) {
-                return prev;
-            }
+        const activeContainerId = findContainer(id);
+        const overContainerId = findContainer(overId);
 
-            const activeGroup = prev[activeContainer];
-            const overGroup = prev[overContainer];
+        if (!activeContainerId || !overContainerId || activeContainerId === overContainerId) {
+            return;
+        }
 
-            // Find the indexes for the players
-            const activeIndex = activeGroup.players.findIndex((player) => player.id === id);
-            const overIndex = overGroup.players.findIndex((player) => player.id === overId);
+        setGroups((prevGroups) => {
+            const updatedGroups = [...prevGroups];
+
+            const activeContainerIndex = updatedGroups.findIndex(group => group.id === activeContainerId);
+            const overContainerIndex = updatedGroups.findIndex(group => group.id === overContainerId);
+
+            const activeGroup = updatedGroups[activeContainerIndex];
+            const overGroup = updatedGroups[overContainerIndex];
+
+            const activeIndex = activeGroup.players.findIndex(player => player.id === id);
 
             if (activeIndex === -1) {
-                // If the active player is not found, return the previous state
-                return prev;
+                return prevGroups;
             }
 
-            let newIndex;
-            if (overId in prev) {
-                // We're at the root droppable of a container
-                newIndex = overGroup.players.length;
-            } else {
-                const isBelowLastItem =
-                    over &&
-                    overIndex === overGroup.players.length - 1 &&
-                    active.rect.current.translated.top > over.rect.top + over.rect.height;
-
-                const modifier = isBelowLastItem ? 1 : 0;
-
-                newIndex = overIndex >= 0 ? overIndex + modifier : overGroup.players.length;
-            }
-
-            // Remove the player from the active group
             const [movedPlayer] = activeGroup.players.splice(activeIndex, 1);
+            overGroup.players.push(movedPlayer);
 
-            // Add the player to the over group at the new index
-            overGroup.players.splice(newIndex, 0, movedPlayer);
-
-            // Return the updated groups
-            return {
-                ...prev,
-                [activeContainer]: {...activeGroup, players: activeGroup.players},
-                [overContainer]: {...overGroup, players: overGroup.players},
-            };
+            return updatedGroups;
         });
     }
 
-
     function handleDragEnd(event: DragEndEvent) {
-        const {active, over} = event;
+        const { active, over } = event;
         const id = active.id.toString();
-        const overId = over?.id.toString() ?? '';
+        const overId = over?.id.toString() ?? null;
 
-        const activeContainer = findContainer(id);
-        const overContainer = findContainer(overId);
-
-        if (!activeContainer || !overContainer || activeContainer !== overContainer) {
+        // Exit early if there's no valid drop target
+        if (!overId) {
             return;
         }
 
-        // Use previous state to find active and over indices
-        setGroups((prev) => {
-            const activeIndex = prev[activeContainer].players.findIndex(
-                (player) => player.id === id
-            );
-            const overIndex = prev[overContainer].players.findIndex(
-                (player) => player.id === overId
-            );
+        const activeContainerId = findContainer(id);
+        const overContainerId = findContainer(overId);
 
-            if (activeIndex === -1 || overIndex === -1 || activeIndex === overIndex) {
-                return prev; // No valid move, return the previous state unchanged
+        // If the containers are different, or one is invalid, exit early
+        if (!activeContainerId || !overContainerId || activeContainerId !== overContainerId) {
+            return;
+        }
+
+        setGroups((prevGroups) => {
+            const updatedGroups = [...prevGroups];
+
+            // Find the container index
+            const containerIndex = updatedGroups.findIndex(group => group.id === activeContainerId);
+            if (containerIndex === -1) {
+                console.error(`Container not found for id: ${activeContainerId}`);
+                return prevGroups; // No valid container, return previous state
             }
 
-            // Perform the move
-            const updatedPlayers = arrayMove(
-                prev[overContainer].players,
-                activeIndex,
-                overIndex
-            );
+            const group = updatedGroups[containerIndex];
 
-            return {
-                ...prev,
-                [overContainer]: {
-                    ...prev[overContainer],
-                    players: updatedPlayers,
-                },
+            // Find the indices of the active and over players within the group
+            const activeIndex = group.players.findIndex(player => player.id === id);
+            const overIndex = group.players.findIndex(player => player.id === overId);
+
+            // Debugging logs to verify indices
+            console.log("Active Index:", activeIndex, "Over Index:", overIndex);
+            console.log("Group before move:", JSON.stringify(group.players, null, 2));
+
+            // Ensure indices are valid
+            if (activeIndex === -1 || overIndex === -1 || activeIndex === overIndex) {
+                console.warn("Invalid indices or no move required");
+                return prevGroups;
+            }
+
+            // Move the player using arrayMove
+            const reorderedPlayers = arrayMove(group.players, activeIndex, overIndex);
+
+            // Update the group with reordered players
+            updatedGroups[containerIndex] = {
+                ...group,
+                players: reorderedPlayers,
             };
+
+            console.log("Group after move:", JSON.stringify(reorderedPlayers, null, 2));
+
+            return updatedGroups;
         });
 
-        setActiveId(null);
+        // Reset active state
         setActivePlayer(null);
     }
 
+    async function handleSaveGroups() {
+        await saveEditedGroups(tournamentId, groups);
+    }
 
     return (
-        <Dialog>
-            <DialogTrigger>Edit groups</DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Group editor</DialogTitle>
-                    <DialogDescription>Move players between groups</DialogDescription>
-                </DialogHeader>
-                <DialogBody className="flex flex-col gap-8">
-                    <DndContext
-                        sensors={sensors}
-                        collisionDetection={closestCenter}
-                        onDragStart={handleDragStart}
-                        onDragOver={handleDragOver}
-                        onDragEnd={handleDragEnd}
-                    >
-                        {Object.entries(groups).map(([groupId, group]) => (
-                            <Container key={groupId} id={groupId} itemIds={group.players.map((player) => player.id)}>
+        <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
+        >
+            <Dialog>
+                <DialogTrigger>Edit groups</DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Group editor</DialogTitle>
+                        <DialogDescription>Move players between groups</DialogDescription>
+                    </DialogHeader>
+                    <div className="flex flex-col gap-8">
+                        {groups.map((group) => (
+                            <Container key={group.id} id={group.id} itemIds={group.players.map(player => player.id)}>
                                 <h2 className="text-sm font-bold mb-2">{group.name}</h2>
-                                <div className="">
+                                <div>
                                     {group.players.map((player) => (
                                         <SortableItem id={player.id} key={player.id}>
                                             <p className={
                                                 clsx('border rounded-sm p-2 bg-white',
-                                                activePlayer?.id === player.id ? 'opacity-50' : 'opacity-100'
-                                                )}>{player.name}</p>
+                                                    activePlayer?.id === player.id ? 'opacity-50' : 'opacity-100'
+                                                )}
+                                            >
+                                                {player.name}
+                                            </p>
                                         </SortableItem>
                                     ))}
                                 </div>
                             </Container>
                         ))}
-                        <DragOverlay>{activePlayer ?
-                            <p className="border rounded-sm p-2 bg-white">
-                                {activePlayer.name}
-                            </p> : null}
-                        </DragOverlay>
-                    </DndContext>
-                </DialogBody>
-            </DialogContent>
-        </Dialog>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="default" onClick={handleSaveGroups}>Save</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            <DragOverlay>
+                {activePlayer ? (
+                    <div className="border rounded-sm p-2 bg-white w-full flex items-center">
+                        {activePlayer.name}
+                    </div>
+                ) : null}
+            </DragOverlay>
+        </DndContext>
     );
 }

@@ -1,7 +1,7 @@
-﻿import {FormattedMatch} from "@/app/lib/tournaments/data";
+﻿import {IFormattedMatch} from "@/app/lib/tournaments/data";
 import {clsx} from "clsx";
 
-export default async function Match({match, className}: { match: FormattedMatch; className?: string }) {
+export default async function Match({match, className}: { match: IFormattedMatch; className?: string }) {
     return (
         <div key={match.id} className={clsx('p-4 border border-gray-200 rounded-md relative group max-w-screen-sm', className)}>
             <p className="text-sm text-gray-400">{match.group?.groupName}</p>

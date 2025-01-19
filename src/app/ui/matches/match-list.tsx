@@ -1,8 +1,8 @@
-﻿import {FormattedMatch} from "@/app/lib/tournaments/data";
+﻿import {IFormattedMatch} from "@/app/lib/tournaments/data";
 import {clsx} from "clsx";
 import Match from "@/app/ui/matches/match";
 
-export default async function MathList({matchList, className = ""}: {matchList: FormattedMatch[]; className?: string;}) {
+export default async function MathList({matchList, className = ""}: {matchList: IFormattedMatch[]; className?: string;}) {
     return (
         <div className={clsx(className)}>
             {matchList.length === 0 && <p>There are no matches to show</p>}

@@ -36,13 +36,14 @@ export default async function GroupSection({tournamentId, allowEdit = false, cla
                 </div>
             }
             {allowEdit &&
-                <Button variant={"default"} className="mt-8"
-                        onClick={generateTournamentGroups.bind(null, tournamentId)}>
+                <><Button variant={"default"} className="mt-8"
+                          onClick={generateTournamentGroups.bind(null, tournamentId)}>
                     {groups.length > 0 ? 'Regenerate groups' : 'Generate groups'}
                     <ArrowPathIcon/>
                 </Button>
+                    <GroupEditor groups={groups} tournamentId={tournamentId}/>
+                </>
             }
-            <GroupEditor />
         </div>
     )
 }
